@@ -49,8 +49,8 @@ class FileTrack(track.Track):
     @property
     def duration(self):
         """ Return the duration in seconds. """
-        with audioread.audio_open(self.path) as f:
-            return f.duration
+        y, sr = librosa.load(self.path, sr=None)
+        return y.shape[0] / sr
 
     def read_samples(self, sr=None, offset=0, duration=None):
         """
@@ -69,14 +69,10 @@ class FileTrack(track.Track):
             np.ndarray: A numpy array containing the samples as a
             floating point (numpy.float32) time series.
         """
-        samples, __ = librosa.core.load(
-            self.path, sr=sr, offset=offset, duration=duration
-        )
+        samples, __ = librosa.core.load(self.path, sr=sr, offset=offset, duration=duration)
         return samples
 
-    def read_frames(
-        self, frame_size, hop_size, offset=0, duration=None, buffer_size=5760000
-    ):
+    def read_frames(self, frame_size, hop_size, offset=0, duration=None, buffer_size=5760000):
         """
         Generator that reads and returns the samples of the track in frames.
 
