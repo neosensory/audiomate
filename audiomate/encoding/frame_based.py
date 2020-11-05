@@ -46,7 +46,6 @@ class FrameHotEncoder(base.Encoder):
         ])
 
     """
-
     def __init__(self, labels, label_list_idx, frame_settings, sr=None):
         self.labels = labels
         self.label_list_idx = label_list_idx
@@ -61,7 +60,9 @@ class FrameHotEncoder(base.Encoder):
         mat = np.zeros((num_frames, len(self.labels)))
 
         if self.label_list_idx not in utterance.label_lists:
-            raise ValueError('Utterance {} has no label-list with idx {}'.format(utterance.idx, self.label_list_idx))
+            raise ValueError(
+                'Utterance {} has no label-list with idx {}'.format(
+                    utterance.idx, self.label_list_idx))
 
         label_list = utterance.label_lists[self.label_list_idx]
 
@@ -75,7 +76,8 @@ class FrameHotEncoder(base.Encoder):
                 else:
                     label_end = label.end
 
-                start, end = self.frame_settings.time_range_to_frame_range(label.start, label_end, sr)
+                start, end = self.frame_settings.time_range_to_frame_range(
+                    label.start, label_end, sr)
 
                 # If label ends at the end of the utterance
                 if label.end == float('inf'):
@@ -120,10 +122,20 @@ class FrameOrdinalEncoder(base.Encoder):
         >>> encoder.encode_utterance(utt)
         array([1,1,0,0,0,2,1,1])
     """
-
-    def __init__(self, labels, label_list_idx, frame_settings, sr=None):
+    def __init__(self,
+                 labels,
+                 label_list_idx,
+                 frame_settings,
+                 label_mapping=None,
+                 sr=None):
         self.labels = labels
         self.label_list_idx = label_list_idx
+        self.label_mapping = label_mapping or {}
+        if len(self.label_mapping) > 0:
+            if not set(self.label_mapping.values()).issubset(labels):
+                raise ValueError(
+                    f'Label mapping: {self.label_mapping} has values not in labels: {labels}'
+                )
         self.frame_settings = frame_settings
         self.sr = sr
 
@@ -135,12 +147,15 @@ class FrameOrdinalEncoder(base.Encoder):
         mat = np.zeros((num_frames, len(self.labels)))
 
         if self.label_list_idx not in utterance.label_lists:
-            raise ValueError('Utterance {} has no label-list with idx {}'.format(utterance.idx, self.label_list_idx))
+            raise ValueError(
+                'Utterance {} has no label-list with idx {}'.format(
+                    utterance.idx, self.label_list_idx))
 
         label_list = utterance.label_lists[self.label_list_idx]
 
         for label in label_list:
-            if label.value in self.labels:
+            label_value = self.label_mapping.get(label.value, label.value)
+            if label_value in self.labels:
                 if label.end == float('inf'):
                     if utterance.end == float('inf'):
                         label_end = utterance.track.duration
@@ -149,18 +164,20 @@ class FrameOrdinalEncoder(base.Encoder):
                 else:
                     label_end = label.end
 
-                start, end = self.frame_settings.time_range_to_frame_range(label.start, label_end, sr)
+                start, end = self.frame_settings.time_range_to_frame_range(
+                    label.start, label_end, sr)
 
                 # If label ends at the end of the utterance
                 if label.end == float('inf'):
                     end = num_frames
 
-                label_index = self.labels.index(label.value)
+                label_index = self.labels.index(label_value)
 
                 for frame_index in range(start, min(end, num_frames)):
-                    frame_start, frame_end = self.frame_settings.frame_to_seconds(frame_index, sr=sr)
-                    overlap = misc.length_of_overlap(frame_start, frame_end, label.start, label.end)
+                    frame_start, frame_end = self.frame_settings.frame_to_seconds(
+                        frame_index, sr=sr)
+                    overlap = misc.length_of_overlap(frame_start, frame_end,
+                                                     label.start, label.end)
 
                     mat[frame_index, label_index] = overlap
-
         return np.argmax(mat, axis=1)

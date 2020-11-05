@@ -15,7 +15,8 @@ class FileTrack(track.Track):
         idx (str): A identifier to uniquely identify a track.
         path (str): The path to the file.
     """
-    __slots__ = ['path']
+
+    __slots__ = ["path"]
 
     def __init__(self, idx, path):
         super(FileTrack, self).__init__(idx)
@@ -69,15 +70,13 @@ class FileTrack(track.Track):
             floating point (numpy.float32) time series.
         """
         samples, __ = librosa.core.load(
-            self.path,
-            sr=sr,
-            offset=offset,
-            duration=duration
+            self.path, sr=sr, offset=offset, duration=duration
         )
         return samples
 
-    def read_frames(self, frame_size, hop_size, offset=0,
-                    duration=None, buffer_size=5760000):
+    def read_frames(
+        self, frame_size, hop_size, offset=0, duration=None, buffer_size=5760000
+    ):
         """
         Generator that reads and returns the samples of the track in frames.
 
@@ -97,7 +96,7 @@ class FileTrack(track.Track):
         if duration is not None:
             end = offset + duration
         else:
-            end = float('inf')
+            end = float("inf")
 
         return audio.read_frames(
             self.path,
@@ -105,4 +104,5 @@ class FileTrack(track.Track):
             hop_size,
             start=offset,
             end=end,
-            buffer_size=buffer_size)
+            buffer_size=buffer_size,
+        )
