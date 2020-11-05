@@ -79,3 +79,4 @@ pages-clone/
 .benchmarks/
 
 test.ipynb
+.vscode/
